@@ -3,6 +3,7 @@ import asyncio
 import os
 import re
 import subprocess
+import sys
 import time
 from datetime import datetime
 from dataclasses import dataclass
@@ -13,6 +14,15 @@ from yandex_music import Client
 from winsdk.windows.media.control import (
     GlobalSystemMediaTransportControlsSessionManager as MediaManager,
 )
+
+
+def app_dir() -> str:
+    if getattr(sys, "frozen", False):
+        return os.path.dirname(sys.executable)
+    return os.path.dirname(__file__)
+
+
+APP_DIR = app_dir()
 
 
 def load_env_file(path: str) -> None:
@@ -30,7 +40,7 @@ def load_env_file(path: str) -> None:
             os.environ.setdefault(key, value)
 
 
-load_env_file(os.path.join(os.path.dirname(__file__), ".env"))
+load_env_file(os.path.join(APP_DIR, ".env"))
 
 
 CLIENT_ID = os.getenv("DISCORD_CLIENT_ID", "1504152588684230656")
@@ -47,7 +57,7 @@ ALBUM_BUTTON_LABEL = os.getenv("ALBUM_BUTTON_LABEL", "Album")
 PAUSE_BEHAVIOR = os.getenv("PAUSE_BEHAVIOR", "show").lower()
 MIN_MATCH_SCORE = int(os.getenv("MIN_MATCH_SCORE", "70"))
 HISTORY_ENABLED = os.getenv("HISTORY_ENABLED", "1") != "0"
-HISTORY_PATH = os.path.join(os.path.dirname(__file__), "history.csv")
+HISTORY_PATH = os.path.join(APP_DIR, "history.csv")
 
 
 @dataclass(frozen=True)

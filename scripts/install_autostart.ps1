@@ -1,6 +1,6 @@
 $ErrorActionPreference = "Stop"
 
-$projectDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$projectDir = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 $startup = [Environment]::GetFolderPath("Startup")
 $shortcutPath = Join-Path $startup "MostDSYandex Presence.lnk"
 $target = Join-Path $env:SystemRoot "System32\WindowsPowerShell\v1.0\powershell.exe"

@@ -10,6 +10,9 @@ env/
 .env
 *.log
 history.csv
+build/
+dist/
+*.spec
 
 .mypy_cache/
 .pytest_cache/

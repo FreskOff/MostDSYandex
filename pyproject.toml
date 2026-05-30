@@ -24,8 +24,8 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/your-name/MostDSYandex"
-Issues = "https://github.com/your-name/MostDSYandex/issues"
+Homepage = "https://github.com/FreskOff/MostDSYandex"
+Issues = "https://github.com/FreskOff/MostDSYandex/issues"
 
 [tool.ruff]
 line-length = 100

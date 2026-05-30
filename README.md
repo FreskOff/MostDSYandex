@@ -7,6 +7,8 @@
 
 Yandex Music status for Discord, without the sad question-mark cover.
 
+[![Download for Windows](https://img.shields.io/badge/Download-Windows%20EXE-2ea44f?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/FreskOff/MostDSYandex/releases/latest/download/MostDSYandex.exe)
+
 This is a small Windows bridge. It watches the track that Yandex Music exposes through Windows media controls, finds the same track on Yandex Music, grabs the cover and links, then sends a Discord Rich Presence card.
 
 It is built for the desktop app, but browser playback can work too if Windows sees it as a media session.
@@ -41,10 +43,20 @@ VOID
 - Discord desktop app
 - Yandex Music desktop app, or browser playback that appears in Windows media controls
 
+## Download
+
+The easiest install is the release exe:
+
+[Download `MostDSYandex.exe`](https://github.com/FreskOff/MostDSYandex/releases/latest/download/MostDSYandex.exe)
+
+Put it in its own folder, run it, and keep Discord open. If you want config, place a `.env` file next to the exe.
+
+If you want the source version instead, use the install steps below.
+
 ## Install
 
 ```powershell
-git clone https://github.com/your-name/MostDSYandex.git
+git clone https://github.com/FreskOff/MostDSYandex.git
 cd MostDSYandex
 
 python -m pip install -r requirements.txt
@@ -87,13 +99,13 @@ Stop background copies:
 Install the Windows Startup shortcut:
 
 ```powershell
-powershell.exe -ExecutionPolicy Bypass -File .\install_autostart.ps1
+powershell.exe -ExecutionPolicy Bypass -File .\scripts\install_autostart.ps1
 ```
 
 Remove it:
 
 ```powershell
-powershell.exe -ExecutionPolicy Bypass -File .\uninstall_autostart.ps1
+powershell.exe -ExecutionPolicy Bypass -File .\scripts\uninstall_autostart.ps1
 ```
 
 The Startup script checks whether `presence.py` is already running before it starts a new copy.
@@ -128,11 +140,19 @@ presence.py              main script
 run.bat                  start it by hand
 stop.bat                 stop running copies
 start_presence.ps1       hidden launcher used by autostart
-install_autostart.ps1    add Startup shortcut
-uninstall_autostart.ps1  remove Startup shortcut
 requirements.txt         Python dependencies
 .env.example             config template
+scripts/                 build and autostart helpers
+.github/                 release workflow and issue templates
 ```
+
+## Build the exe
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass -File .\scripts\build_exe.ps1
+```
+
+The exe lands in `dist\MostDSYandex.exe`. Release builds are made by GitHub Actions when a `v*` tag is pushed.
 
 ## License
 
