@@ -1,11 +1,11 @@
-## Summary
+## What changed?
 
 - 
 
-## Testing
+## How did you test it?
 
 - 
 
-## Screenshots
+## Screenshot
 
-Add screenshots if the Discord card changed.
+Add one if the Discord card changed.

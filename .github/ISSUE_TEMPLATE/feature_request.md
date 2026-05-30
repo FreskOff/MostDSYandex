@@ -1,16 +1,16 @@
 ---
 name: Feature request
-about: Suggest an improvement
+about: Suggest a change
 title: "[Feature]: "
 labels: enhancement
 assignees: ""
 ---
 
-## Idea
+## What do you want?
 
 
-## Why it helps
+## Why would it be useful?
 
 
-## Mockup or example
+## Example or screenshot
 

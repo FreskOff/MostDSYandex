@@ -1,26 +1,26 @@
 # MostDSYandex
 
-![Python](https://img.shields.io/badge/Python-3.12+-3776AB?style=for-the-badge&logo=python&logoColor=white)
-![Windows](https://img.shields.io/badge/Windows-10%2F11-0078D4?style=for-the-badge&logo=windows&logoColor=white)
-![Discord](https://img.shields.io/badge/Discord-Rich%20Presence-5865F2?style=for-the-badge&logo=discord&logoColor=white)
-![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
+![Python](https://img.shields.io/badge/Python-3.12+-3776AB?logo=python&logoColor=white)
+![Windows](https://img.shields.io/badge/Windows-10%2F11-0078D4?logo=windows&logoColor=white)
+![Discord](https://img.shields.io/badge/Discord-Rich%20Presence-5865F2?logo=discord&logoColor=white)
+![License](https://img.shields.io/badge/License-MIT-green)
 
-Yandex Music to Discord Rich Presence bridge for Windows.
+Yandex Music status for Discord, without the sad question-mark cover.
 
-MostDSYandex reads the currently playing Yandex Music track from Windows media sessions, finds the matching track on Yandex Music, pulls the cover art, and publishes a clean Discord activity card with progress, cover, and buttons.
+This is a small Windows bridge. It watches the track that Yandex Music exposes through Windows media controls, finds the same track on Yandex Music, grabs the cover and links, then sends a Discord Rich Presence card.
 
-## Features
+It is built for the desktop app, but browser playback can work too if Windows sees it as a media session.
 
-- Real current-track detection from Windows media sessions.
-- Discord Rich Presence with track title, artist, cover, timer, and album hover text.
-- `Listen` and `Album` buttons that open Yandex Music.
-- Smart match scoring to avoid wrong covers and links.
-- Updates Discord only when the visible state changes, so the timer does not reset every poll.
-- Optional pause handling: keep the card or clear it.
-- Startup shortcut autostart for Windows.
-- `--once` and `--doctor` diagnostics.
-- Local listening history in `history.csv`.
-- No Yandex token required.
+## What it does
+
+- Shows the current Yandex Music track in Discord.
+- Uses the real cover when Yandex Music returns a good match.
+- Adds `Listen` and `Album` buttons.
+- Keeps Discord's timer stable instead of restarting it every poll.
+- Writes a local `history.csv` if you want to see what played.
+- Starts with Windows if you install the Startup shortcut.
+- Has `--once` for a quick check and `--doctor` when something feels off.
+- Does not need a Yandex token.
 
 ## Preview
 
@@ -39,9 +39,9 @@ VOID
 - Windows 10 or 11
 - Python 3.12+
 - Discord desktop app
-- Yandex Music desktop app or browser playback visible to Windows media controls
+- Yandex Music desktop app, or browser playback that appears in Windows media controls
 
-## Quick Start
+## Install
 
 ```powershell
 git clone https://github.com/your-name/MostDSYandex.git
@@ -54,79 +54,84 @@ python presence.py --doctor
 python presence.py
 ```
 
-Or double-click `run.bat`.
+If you do not care about the terminal, double-click `run.bat`.
 
-## Commands
+## Useful commands
+
+Check what the script sees, then quit:
 
 ```powershell
 python presence.py --once
 ```
 
-Print the detected track, cover, Yandex URL, and match score once.
+Run the health check:
 
 ```powershell
 python presence.py --doctor
 ```
 
-Check Python, autostart, duplicate processes, media detection, cover lookup, Yandex links, and Discord RPC.
+Start the bridge:
 
 ```powershell
 python presence.py
 ```
 
-Run the bridge.
+Stop background copies:
+
+```powershell
+.\stop.bat
+```
 
 ## Autostart
 
-Install autostart:
+Install the Windows Startup shortcut:
 
 ```powershell
 powershell.exe -ExecutionPolicy Bypass -File .\install_autostart.ps1
 ```
 
-Remove autostart:
+Remove it:
 
 ```powershell
 powershell.exe -ExecutionPolicy Bypass -File .\uninstall_autostart.ps1
 ```
 
-The autostart shortcut launches `start_presence.ps1`, which skips launch when `presence.py` is already running.
+The Startup script checks whether `presence.py` is already running before it starts a new copy.
 
-## Configuration
+## Config
 
-Copy `.env.example` to `.env` and edit values as needed.
+Copy `.env.example` to `.env` and tweak it there.
 
-| Variable | Default | Description |
+| Variable | Default | What it changes |
 | --- | --- | --- |
-| `DISCORD_CLIENT_ID` | `1504152588684230656` | Discord application id. |
-| `POLL_SECONDS` | `15` | Media-session poll interval. Minimum effective value is 15 seconds. |
-| `LISTEN_BUTTON_LABEL` | `Listen` | Track button label. |
-| `ALBUM_BUTTON_LABEL` | `Album` | Album button label. |
-| `DISCORD_SMALL_TEXT` | `Playing from Yandex Music` | Small icon hover text. |
-| `DISCORD_SMALL_IMAGE` | `f` | Discord Developer Portal asset key for small image. |
-| `DISCORD_FALLBACK_LARGE_IMAGE` | empty | Fallback large asset key when cover URL is missing. |
-| `PAUSE_BEHAVIOR` | `show` | `show` keeps the card; `clear` removes it on pause. |
-| `MIN_MATCH_SCORE` | `70` | Minimum score required before showing cover/buttons. |
-| `HISTORY_ENABLED` | `1` | Set to `0` to disable `history.csv`. |
+| `DISCORD_CLIENT_ID` | `1504152588684230656` | Discord app id. |
+| `POLL_SECONDS` | `15` | How often the script checks Windows media controls. Values below 15 are ignored. |
+| `LISTEN_BUTTON_LABEL` | `Listen` | Text on the track button. |
+| `ALBUM_BUTTON_LABEL` | `Album` | Text on the album button. |
+| `DISCORD_SMALL_TEXT` | `Playing from Yandex Music` | Hover text for the small image. |
+| `DISCORD_SMALL_IMAGE` | `f` | Small image asset key from the Discord Developer Portal. |
+| `DISCORD_FALLBACK_LARGE_IMAGE` | empty | Large image asset key to use when no cover is available. |
+| `PAUSE_BEHAVIOR` | `show` | `show` marks the card as paused. `clear` removes it. |
+| `MIN_MATCH_SCORE` | `70` | Minimum match score before the script trusts a Yandex result. |
+| `HISTORY_ENABLED` | `1` | Set to `0` to stop writing `history.csv`. |
 
-## Notes
+## A couple of Discord quirks
 
-- Discord may not show Rich Presence buttons to the account that owns the activity, but other users can see them.
-- The Discord application name controls the top line, for example `Listening to Yandex Music`.
-- Keep `POLL_SECONDS` at 15 seconds or higher.
-- `history.csv`, logs, and `.env` are ignored by git.
+- Discord may hide Rich Presence buttons from you on your own card. Other people can still see them.
+- The top line comes from the Discord application name. Rename the app in the Developer Portal if you want it to say `Yandex Music`.
+- Keep the poll interval at 15 seconds or higher. The script only sends a Discord update when the visible status changes.
 
-## Project Layout
+## Files
 
 ```text
-presence.py              Main bridge
-run.bat                  Manual launcher
-stop.bat                 Stops running bridge processes
-start_presence.ps1       Hidden background launcher
-install_autostart.ps1    Creates Startup shortcut
-uninstall_autostart.ps1  Removes Startup shortcut
-requirements.txt         Runtime dependencies
-.env.example             Configuration template
+presence.py              main script
+run.bat                  start it by hand
+stop.bat                 stop running copies
+start_presence.ps1       hidden launcher used by autostart
+install_autostart.ps1    add Startup shortcut
+uninstall_autostart.ps1  remove Startup shortcut
+requirements.txt         Python dependencies
+.env.example             config template
 ```
 
 ## License

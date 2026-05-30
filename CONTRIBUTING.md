@@ -1,8 +1,8 @@
 # Contributing
 
-Thanks for wanting to improve MostDSYandex.
+This project is tiny on purpose. Changes are welcome, but keep the bridge boring and reliable.
 
-## Local setup
+## Setup
 
 ```powershell
 python -m pip install -r requirements.txt
@@ -10,17 +10,14 @@ copy .env.example .env
 python presence.py --doctor
 ```
 
-## Development notes
+## Before opening a PR
 
-- Keep the Discord poll interval at 15 seconds or higher.
-- Send Discord activity updates only when the visible state changes.
+- Keep the poll interval at 15 seconds or higher.
+- Do not send Discord updates on every poll. Update only when the card changes.
 - Do not commit `.env`, logs, or `history.csv`.
-- Keep Windows support first-class; this project depends on Windows media sessions.
+- Test on Windows. The media-session part is Windows-specific.
+- Add a screenshot if you changed what the Discord card looks like.
 
-## Pull requests
+## PR notes
 
-Please include:
-
-- what changed;
-- how you tested it;
-- screenshots if the Discord card changed.
+Tell me what changed and how you checked it. Short is fine.

@@ -1,5 +1,5 @@
-# Code of Conduct
+# Code of conduct
 
-Be respectful, practical, and specific.
+Be decent. Keep issues and reviews useful.
 
-This project is small and desktop-focused. Keep discussion useful, avoid personal attacks, and assume good intent when reviewing issues or pull requests.
+This is a small desktop project, so the bar is simple: no personal attacks, no spam, no wasting people's time on purpose.

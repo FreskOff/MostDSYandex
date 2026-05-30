@@ -1,14 +1,14 @@
 # Changelog
 
-All notable changes to MostDSYandex are documented here.
-
 ## 0.1.0 - 2026-05-30
 
-- Added Yandex Music to Discord Rich Presence bridge.
-- Added Windows media session detection.
-- Added Yandex Music cover, track URL, and album URL lookup.
-- Added `Listen` and `Album` buttons.
-- Added match scoring to avoid wrong covers and links.
-- Added duplicate-process protection and user Startup autostart.
-- Added `--once` and `--doctor` diagnostics.
-- Added listening history export to `history.csv`.
+First usable version.
+
+- Reads the current Yandex Music track from Windows media sessions.
+- Looks up the Yandex Music track, cover, album, and links.
+- Shows a Discord Rich Presence card with `Listen` and `Album` buttons.
+- Scores search results so random covers do not sneak in as often.
+- Avoids duplicate background processes.
+- Adds Startup autostart.
+- Adds `--once` and `--doctor`.
+- Saves played tracks to `history.csv`.

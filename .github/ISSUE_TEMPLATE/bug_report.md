@@ -1,6 +1,6 @@
 ---
 name: Bug report
-about: Report something broken
+about: Something is broken or looks wrong
 title: "[Bug]: "
 labels: bug
 assignees: ""
@@ -9,22 +9,22 @@ assignees: ""
 ## What happened?
 
 
-## Steps to reproduce
+## How to reproduce it
 
 1.
 2.
 3.
 
-## Diagnostics
+## Doctor output
 
-Paste the output of:
+Run this and paste the output:
 
 ```powershell
 python presence.py --doctor
 ```
 
-## Environment
+## Your setup
 
 - Windows version:
 - Discord version:
-- Yandex Music app or browser:
+- Yandex Music desktop app or browser:

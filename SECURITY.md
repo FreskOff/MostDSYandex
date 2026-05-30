@@ -1,22 +1,22 @@
-# Security Policy
+# Security
 
-MostDSYandex is a local desktop bridge. It does not require a Yandex token and does not send secrets to a backend service.
+MostDSYandex runs locally. It does not need a Yandex token and it does not talk to a custom backend.
 
 ## Supported versions
 
-Only the latest version on the main branch is supported.
+Use the latest code on `main`.
 
-## Reporting a vulnerability
+## Reporting a problem
 
-Open a private report or contact the maintainer directly. Please include:
+If you find something risky, open a private report or contact the maintainer. Include:
 
-- affected version or commit;
-- steps to reproduce;
-- expected impact;
-- relevant logs with secrets removed.
+- the version or commit;
+- how to reproduce it;
+- what you think the impact is;
+- logs if they help, with secrets removed.
 
-## Secret handling
+## Secrets
 
 - Do not commit `.env`.
 - Do not share Discord application secrets.
-- `DISCORD_CLIENT_ID` is not a secret, but application credentials are.
+- `DISCORD_CLIENT_ID` is public enough for this use case. Client secrets are not.

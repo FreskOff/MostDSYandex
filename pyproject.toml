@@ -1,7 +1,7 @@
 [project]
 name = "mostdsyandex"
 version = "0.1.0"
-description = "Yandex Music to Discord Rich Presence bridge for Windows."
+description = "A small Windows bridge that shows Yandex Music tracks in Discord Rich Presence."
 readme = "README.md"
 requires-python = ">=3.12"
 license = { file = "LICENSE" }

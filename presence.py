@@ -38,7 +38,7 @@ POLL_SECONDS = max(15, int(os.getenv("POLL_SECONDS", "15")))
 IMAGE_SIZE = "400x400"
 YANDEX_SOURCES = ("yandex", "music")
 
-# Use an uploaded Discord app asset key here if external cover URLs do not render.
+# Optional asset keys from the Discord Developer Portal.
 FALLBACK_LARGE_IMAGE = os.getenv("DISCORD_FALLBACK_LARGE_IMAGE", "")
 SMALL_IMAGE = os.getenv("DISCORD_SMALL_IMAGE", "f")
 SMALL_TEXT = os.getenv("DISCORD_SMALL_TEXT", "Playing from Yandex Music")
