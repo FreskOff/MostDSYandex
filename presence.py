@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from typing import Optional
 
 from pypresence import ActivityType, Presence
+from pypresence.payloads import Payload
 from yandex_music import Client
 from winsdk.windows.media.control import (
     GlobalSystemMediaTransportControlsSessionManager as MediaManager,
@@ -80,6 +81,7 @@ class TrackMeta:
     cover_url: Optional[str] = None
     track_url: Optional[str] = None
     album_url: Optional[str] = None
+    artist_url: Optional[str] = None
     album_title: str = ""
     matched_title: str = ""
     matched_artist: str = ""
@@ -155,6 +157,7 @@ class CoverResolver:
         cover_url = None
         track_url = None
         album_url = None
+        artist_url = None
         album_title = ""
         try:
             result = self.client.search(query, type_="track")
@@ -169,6 +172,10 @@ class CoverResolver:
                 album_title = getattr(album, "title", "") or ""
                 track_url = f"https://music.yandex.ru/album/{album_id}/track/{best.id}"
                 album_url = f"https://music.yandex.ru/album/{album_id}"
+            if best and best_score >= MIN_MATCH_SCORE and best.artists:
+                artist_id = getattr(best.artists[0], "id", None)
+                if artist_id:
+                    artist_url = f"https://music.yandex.ru/artist/{artist_id}"
             matched_title = getattr(best, "title", "") if best else ""
             matched_artist = track_artists(best) if best else ""
         except Exception as exc:
@@ -182,6 +189,7 @@ class CoverResolver:
             cover_url=cover_url,
             track_url=track_url,
             album_url=album_url,
+            artist_url=artist_url,
             album_title=album_title,
             matched_title=matched_title,
             matched_artist=matched_artist,
@@ -277,6 +285,7 @@ async def print_once() -> None:
     print(f"cover: {meta.cover_url or '-'}")
     print(f"url: {meta.track_url or '-'}")
     print(f"album_url: {meta.album_url or '-'}")
+    print(f"artist_url: {meta.artist_url or '-'}")
     print(f"album_title: {meta.album_title or '-'}")
     print(f"match: {meta.matched_artist or '-'} - {meta.matched_title or '-'} ({meta.score})")
 
@@ -348,8 +357,38 @@ async def doctor_media() -> None:
     print(f"cover: {meta.cover_url or 'missing'}")
     print(f"url: {meta.track_url or 'missing'}")
     print(f"album_url: {meta.album_url or 'missing'}")
+    print(f"artist_url: {meta.artist_url or 'missing'}")
     print(f"album_title: {meta.album_title or 'missing'}")
     print(f"match: {meta.matched_artist or '-'} - {meta.matched_title or '-'} ({meta.score})")
+
+
+def update_discord_activity(rpc: Presence, payload: dict, meta: TrackMeta) -> None:
+    activity_payload = Payload.set_activity(
+        pid=os.getpid(),
+        activity_type=payload.get("activity_type"),
+        state=payload.get("state"),
+        details=payload.get("details"),
+        start=(int(payload["start"]) * 1000) if payload.get("start") else None,
+        end=(int(payload["end"]) * 1000) if payload.get("end") else None,
+        large_image=payload.get("large_image"),
+        large_text=payload.get("large_text"),
+        small_image=payload.get("small_image"),
+        small_text=payload.get("small_text"),
+        buttons=payload.get("buttons"),
+        instance=True,
+        activity=True,
+    )
+    activity = activity_payload.data["args"]["activity"]
+
+    if meta.track_url:
+        activity["details_url"] = meta.track_url
+        activity["assets"]["large_url"] = meta.track_url
+    if meta.artist_url:
+        activity["state_url"] = meta.artist_url
+    elif meta.track_url:
+        activity["state_url"] = meta.track_url
+
+    rpc.update(payload_override=activity_payload)
 
 
 def doctor() -> None:
@@ -429,12 +468,13 @@ def run_presence() -> None:
 
                 meta = resolver.resolve(track)
                 payload = build_presence_payload(track, meta, current_started_at)
-                rpc.update(**payload)
+                update_discord_activity(rpc, payload, meta)
 
                 print(f"[discord] {track.artist} - {track.title}")
                 print(f"[cover] {meta.cover_url or FALLBACK_LARGE_IMAGE or 'fallback missing'}")
                 print(f"[url] {meta.track_url or 'missing'}")
                 print(f"[album] {meta.album_url or 'missing'}")
+                print(f"[artist] {meta.artist_url or 'missing'}")
                 print(f"[match] {meta.matched_artist or '-'} - {meta.matched_title or '-'} ({meta.score})")
                 if track.is_playing and track.key != last_history_key:
                     append_history(track, meta)

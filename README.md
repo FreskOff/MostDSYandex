@@ -18,6 +18,7 @@ It is built for the desktop app, but browser playback can work too if Windows se
 - Shows the current Yandex Music track in Discord.
 - Uses the real cover when Yandex Music returns a good match.
 - Adds `Listen` and `Album` buttons.
+- Links the song title to the track and the artist line to the artist page, when Discord shows those links.
 - Keeps Discord's timer stable instead of restarting it every poll.
 - Writes a local `history.csv` if you want to see what played.
 - Starts with Windows if you install the Startup shortcut.
@@ -130,6 +131,7 @@ Copy `.env.example` to `.env` and tweak it there.
 ## A couple of Discord quirks
 
 - Discord may hide Rich Presence buttons from you on your own card. Other people can still see them.
+- Clickable title/artist links depend on the current Discord client. Newer clients support them; older ones may only show the buttons.
 - The top line comes from the Discord application name. Rename the app in the Developer Portal if you want it to say `Yandex Music`.
 - Keep the poll interval at 15 seconds or higher. The script only sends a Discord update when the visible status changes.
 
