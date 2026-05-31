@@ -137,7 +137,7 @@ Copy `.env.example` to `.env` and tweak it there.
 | `DISCORD_SMALL_TEXT` | `Playing from Yandex Music` | Hover text for the small image. |
 | `DISCORD_SMALL_IMAGE` | `f` | Small image asset key from the Discord Developer Portal. |
 | `DISCORD_FALLBACK_LARGE_IMAGE` | empty | Large image asset key to use when no cover is available. |
-| `PAUSE_BEHAVIOR` | `show` | `show` marks the card as paused. `clear` removes it. |
+| `PAUSE_BEHAVIOR` | `clear` | `clear` hides the card on pause. `show` keeps it visible without changing the artist text. |
 | `MIN_MATCH_SCORE` | `70` | Minimum match score before the script trusts a Yandex result. |
 | `HISTORY_ENABLED` | `1` | Set to `0` to stop writing `history.csv`. |
 

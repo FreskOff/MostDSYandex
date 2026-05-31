@@ -58,7 +58,7 @@ SMALL_IMAGE = os.getenv("DISCORD_SMALL_IMAGE", "f")
 SMALL_TEXT = os.getenv("DISCORD_SMALL_TEXT", "Playing from Yandex Music")
 LISTEN_BUTTON_LABEL = os.getenv("LISTEN_BUTTON_LABEL", "Listen")
 ALBUM_BUTTON_LABEL = os.getenv("ALBUM_BUTTON_LABEL", "Album")
-PAUSE_BEHAVIOR = os.getenv("PAUSE_BEHAVIOR", "show").lower()
+PAUSE_BEHAVIOR = os.getenv("PAUSE_BEHAVIOR", "clear").lower()
 MIN_MATCH_SCORE = int(os.getenv("MIN_MATCH_SCORE", "70"))
 HISTORY_ENABLED = os.getenv("HISTORY_ENABLED", "1") != "0"
 HISTORY_PATH = os.path.join(APP_DIR, "history.csv")
@@ -289,9 +289,6 @@ def build_presence_payload(track: Track, meta: TrackMeta, started_at: Optional[i
     end = start + track.duration_seconds if start and track.duration_seconds else None
     state = track.artist[:128] or "Yandex Music"
     large_text = meta.album_title or track.album or f"{track.title} - {track.artist}"
-    if not track.is_playing and PAUSE_BEHAVIOR == "show":
-        state = f"Paused - {state}"[:128]
-        large_text = f"Paused on Yandex Music"
 
     buttons = []
     if meta.track_url:
@@ -371,10 +368,11 @@ def count_presence_processes() -> int:
                 "-Command",
                 f"$n='presence.py'; $pidToSkip={os.getpid()}; "
                 "Get-CimInstance Win32_Process | "
-                "Where-Object { $_.CommandLine -and $_.CommandLine.Contains($n) -and "
-                "$_.ProcessId -ne $pidToSkip -and "
+                "Where-Object { $_.ProcessId -ne $pidToSkip -and ("
+                "$_.Name -eq 'MostDSYandex.exe' -or "
+                "($_.CommandLine -and $_.CommandLine.Contains($n) -and "
                 "$_.CommandLine -notmatch '--once|--doctor' -and "
-                "($_.Name -eq 'python.exe' -or $_.Name -eq 'pythonw.exe') } | "
+                "($_.Name -eq 'python.exe' -or $_.Name -eq 'pythonw.exe'))) } | "
                 "Measure-Object | Select-Object -ExpandProperty Count",
             ],
             capture_output=True,
@@ -501,11 +499,10 @@ def run_presence(stop_event: Optional[threading.Event] = None, runtime: Optional
                 continue
 
             if not track.is_playing and PAUSE_BEHAVIOR == "clear":
-                if last_signature:
-                    rpc.clear()
-                    last_signature = ""
-                    current_started_at = None
-                    print("[discord] cleared: playback paused")
+                rpc.clear()
+                last_signature = ""
+                current_started_at = None
+                print("[discord] cleared: playback paused")
                 runtime.update(status="Paused", track=f"{track.artist} - {track.title}")
                 stop_event.wait(POLL_SECONDS)
                 continue
@@ -558,6 +555,9 @@ def run_presence(stop_event: Optional[threading.Event] = None, runtime: Optional
 
 
 def open_path(path: str) -> None:
+    if path.startswith("http://") or path.startswith("https://"):
+        os.startfile(path)
+        return
     if os.path.exists(path):
         os.startfile(path)
 
@@ -568,9 +568,8 @@ def run_tray() -> None:
 
     try:
         import pystray
-        from PIL import Image, ImageDraw
+        from PIL import Image, ImageDraw, ImageTk
         import tkinter as tk
-        from tkinter import ttk
     except Exception as exc:
         print(f"Tray dependencies are missing: {exc}")
         run_presence()
@@ -594,64 +593,76 @@ def run_tray() -> None:
         snap = RUNTIME.snapshot()
         root = tk.Tk()
         root.title("MostDSYandex")
-        root.geometry("420x310")
+        root.geometry("380x230")
         root.resizable(False, False)
         if os.path.exists(ICO_PATH):
             root.iconbitmap(ICO_PATH)
 
-        bg = "#101114"
-        panel = "#191b20"
-        fg = "#f3f4f6"
-        muted = "#a7adb8"
-        accent = "#ffd21a"
+        bg = "#0f1117"
+        panel = "#171a22"
+        fg = "#f5f7fb"
+        muted = "#9aa3b2"
+        accent = "#ffd22e"
+        border = "#252a35"
         root.configure(bg=bg)
 
-        style = ttk.Style(root)
-        style.theme_use("clam")
-        style.configure("TButton", padding=8, relief="flat")
-
-        frame = tk.Frame(root, bg=panel, padx=22, pady=20)
+        frame = tk.Frame(root, bg=panel, padx=18, pady=16, highlightbackground=border, highlightthickness=1)
         frame.pack(fill="both", expand=True, padx=14, pady=14)
 
-        tk.Label(frame, text="MostDSYandex", bg=panel, fg=fg, font=("Segoe UI", 18, "bold")).pack(anchor="w")
-        tk.Label(frame, text=snap["status"], bg=panel, fg=accent, font=("Segoe UI", 10, "bold")).pack(anchor="w", pady=(2, 14))
-        tk.Label(frame, text=snap["track"] or "No track yet", bg=panel, fg=fg, font=("Segoe UI", 11), wraplength=360, justify="left").pack(anchor="w")
+        header = tk.Frame(frame, bg=panel)
+        header.pack(fill="x")
 
-        details = [
-            ("Track", snap["track_url"]),
-            ("Artist", snap["artist_url"]),
-            ("Album", snap["album_url"]),
-        ]
-        for label, value in details:
-            text = f"{label}: {value or 'missing'}"
-            tk.Label(frame, text=text, bg=panel, fg=muted, font=("Segoe UI", 9), wraplength=360, justify="left").pack(anchor="w", pady=(8, 0))
+        if os.path.exists(ICON_PATH):
+            icon_img = Image.open(ICON_PATH).resize((36, 36), Image.Resampling.LANCZOS)
+            icon_photo = ImageTk.PhotoImage(icon_img)
+            icon_label = tk.Label(header, image=icon_photo, bg=panel)
+            icon_label.image = icon_photo
+            icon_label.pack(side="left", padx=(0, 10))
+
+        title_block = tk.Frame(header, bg=panel)
+        title_block.pack(side="left", fill="x", expand=True)
+        tk.Label(title_block, text="MostDSYandex", bg=panel, fg=fg, font=("Segoe UI", 15, "bold")).pack(anchor="w")
+        tk.Label(title_block, text=snap["status"], bg=panel, fg=accent, font=("Segoe UI", 9, "bold")).pack(anchor="w", pady=(1, 0))
+
+        tk.Label(
+            frame,
+            text=snap["track"] or "Waiting for Yandex Music",
+            bg=panel,
+            fg=fg,
+            font=("Segoe UI", 10),
+            wraplength=320,
+            justify="left",
+        ).pack(anchor="w", pady=(18, 0))
+
+        subtext = "Discord card is active" if snap["status"] == "Playing" else "Status is hidden while playback is paused"
+        tk.Label(frame, text=subtext, bg=panel, fg=muted, font=("Segoe UI", 9)).pack(anchor="w", pady=(6, 0))
 
         if snap["last_error"]:
             tk.Label(frame, text=snap["last_error"], bg=panel, fg="#ff8a8a", font=("Segoe UI", 9), wraplength=360, justify="left").pack(anchor="w", pady=(12, 0))
 
         buttons = tk.Frame(frame, bg=panel)
-        buttons.pack(fill="x", pady=(18, 0))
-        ttk.Button(buttons, text="Open folder", command=lambda: open_path(APP_DIR)).pack(side="left")
-        ttk.Button(buttons, text="Close", command=root.destroy).pack(side="right")
-        root.mainloop()
+        buttons.pack(fill="x", side="bottom", pady=(16, 0))
 
-    def run_doctor_window():
-        result = subprocess.run(
-            [sys.executable, sys.argv[0], "--doctor"],
-            capture_output=True,
-            text=True,
-            cwd=APP_DIR,
-            timeout=60,
-        )
-        root = tk.Tk()
-        root.title("MostDSYandex doctor")
-        root.geometry("640x460")
-        if os.path.exists(ICO_PATH):
-            root.iconbitmap(ICO_PATH)
-        text = tk.Text(root, wrap="word", font=("Consolas", 10))
-        text.pack(fill="both", expand=True)
-        text.insert("1.0", (result.stdout or "") + (result.stderr or ""))
-        text.configure(state="disabled")
+        def button(parent, text, command):
+            return tk.Button(
+                parent,
+                text=text,
+                command=command,
+                bg="#222733",
+                fg=fg,
+                activebackground="#2c3342",
+                activeforeground=fg,
+                relief="flat",
+                bd=0,
+                padx=14,
+                pady=7,
+                font=("Segoe UI", 9),
+            )
+
+        if snap["track_url"]:
+            button(buttons, "Open track", lambda: open_path(snap["track_url"])).pack(side="left")
+        button(buttons, "Folder", lambda: open_path(APP_DIR)).pack(side="left", padx=(8, 0))
+        button(buttons, "Close", root.destroy).pack(side="right")
         root.mainloop()
 
     def quit_app(icon, _item=None):
@@ -660,7 +671,6 @@ def run_tray() -> None:
 
     menu = pystray.Menu(
         pystray.MenuItem("Status", lambda icon, item: threading.Thread(target=show_status, daemon=True).start(), default=True),
-        pystray.MenuItem("Doctor", lambda icon, item: threading.Thread(target=run_doctor_window, daemon=True).start()),
         pystray.MenuItem("Open folder", lambda icon, item: open_path(APP_DIR)),
         pystray.Menu.SEPARATOR,
         pystray.MenuItem("Quit", quit_app),

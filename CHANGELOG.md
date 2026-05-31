@@ -1,11 +1,19 @@
 # Changelog
 
+## 0.2.1 - 2026-05-31
+
+- Removes the Doctor item from the tray menu.
+- Reworks the status window so it is no longer a debug dump.
+- Clears the Discord card on pause by default.
+- Keeps `--doctor` as a command-line tool only.
+
 ## 0.2.0 - 2026-05-31
 
 - Adds a Windows tray app mode for the exe.
 - Starts release builds without a console window.
 - Adds a generated project icon/avatar.
-- Adds a small status window and doctor window from the tray menu.
+- Adds a small status window from the tray menu.
+- Hides the Discord card while playback is paused by default.
 
 ## 0.1.1 - 2026-05-31
 
