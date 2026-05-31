@@ -1,9 +1,11 @@
 import argparse
 import asyncio
+import ctypes
 import os
 import re
 import subprocess
 import sys
+import threading
 import time
 from datetime import datetime
 from dataclasses import dataclass
@@ -24,6 +26,7 @@ def app_dir() -> str:
 
 
 APP_DIR = app_dir()
+RESOURCE_DIR = getattr(sys, "_MEIPASS", APP_DIR)
 
 
 def load_env_file(path: str) -> None:
@@ -59,6 +62,48 @@ PAUSE_BEHAVIOR = os.getenv("PAUSE_BEHAVIOR", "show").lower()
 MIN_MATCH_SCORE = int(os.getenv("MIN_MATCH_SCORE", "70"))
 HISTORY_ENABLED = os.getenv("HISTORY_ENABLED", "1") != "0"
 HISTORY_PATH = os.path.join(APP_DIR, "history.csv")
+ICON_PATH = os.path.join(RESOURCE_DIR, "assets", "app-icon.png")
+ICO_PATH = os.path.join(RESOURCE_DIR, "assets", "app-icon.ico")
+
+
+class RuntimeState:
+    def __init__(self) -> None:
+        self.lock = threading.Lock()
+        self.status = "Starting"
+        self.track = ""
+        self.cover_url = ""
+        self.track_url = ""
+        self.artist_url = ""
+        self.album_url = ""
+        self.last_error = ""
+
+    def update(self, **values: str) -> None:
+        with self.lock:
+            for key, value in values.items():
+                setattr(self, key, value or "")
+
+    def snapshot(self) -> dict:
+        with self.lock:
+            return {
+                "status": self.status,
+                "track": self.track,
+                "cover_url": self.cover_url,
+                "track_url": self.track_url,
+                "artist_url": self.artist_url,
+                "album_url": self.album_url,
+                "last_error": self.last_error,
+            }
+
+
+RUNTIME = RuntimeState()
+_SINGLE_INSTANCE_MUTEX = None
+
+
+def acquire_single_instance() -> bool:
+    global _SINGLE_INSTANCE_MUTEX
+    kernel32 = ctypes.windll.kernel32
+    _SINGLE_INSTANCE_MUTEX = kernel32.CreateMutexW(None, False, "Local\\MostDSYandex.Tray")
+    return kernel32.GetLastError() != 183
 
 
 @dataclass(frozen=True)
@@ -424,21 +469,25 @@ def doctor() -> None:
         print(f"discord_rpc: failed ({exc})")
 
 
-def run_presence() -> None:
+def run_presence(stop_event: Optional[threading.Event] = None, runtime: Optional[RuntimeState] = None) -> None:
     if not CLIENT_ID:
         raise RuntimeError("Set DISCORD_CLIENT_ID or edit CLIENT_ID in presence.py.")
 
+    stop_event = stop_event or threading.Event()
+    runtime = runtime or RUNTIME
     resolver = CoverResolver()
     rpc = Presence(CLIENT_ID)
     print("Connecting to Discord...")
+    runtime.update(status="Connecting to Discord")
     rpc.connect()
     print("Connected. Start Yandex Music playback and leave this window open.")
+    runtime.update(status="Running", last_error="")
 
     last_signature = ""
     current_started_at: Optional[int] = None
     last_history_key = ""
 
-    while True:
+    while not stop_event.is_set():
         try:
             track = asyncio.run(get_yandex_track())
             if not track:
@@ -447,7 +496,8 @@ def run_presence() -> None:
                     last_signature = ""
                     current_started_at = None
                     print("[discord] cleared: Yandex Music session not found")
-                time.sleep(POLL_SECONDS)
+                runtime.update(status="Waiting for Yandex Music", track="")
+                stop_event.wait(POLL_SECONDS)
                 continue
 
             if not track.is_playing and PAUSE_BEHAVIOR == "clear":
@@ -456,7 +506,8 @@ def run_presence() -> None:
                     last_signature = ""
                     current_started_at = None
                     print("[discord] cleared: playback paused")
-                time.sleep(POLL_SECONDS)
+                runtime.update(status="Paused", track=f"{track.artist} - {track.title}")
+                stop_event.wait(POLL_SECONDS)
                 continue
 
             signature = f"{track.key}::{track.is_playing}::{track.duration_seconds}"
@@ -476,6 +527,15 @@ def run_presence() -> None:
                 print(f"[album] {meta.album_url or 'missing'}")
                 print(f"[artist] {meta.artist_url or 'missing'}")
                 print(f"[match] {meta.matched_artist or '-'} - {meta.matched_title or '-'} ({meta.score})")
+                runtime.update(
+                    status="Playing" if track.is_playing else "Paused",
+                    track=f"{track.artist} - {track.title}",
+                    cover_url=meta.cover_url or "",
+                    track_url=meta.track_url or "",
+                    artist_url=meta.artist_url or "",
+                    album_url=meta.album_url or "",
+                    last_error="",
+                )
                 if track.is_playing and track.key != last_history_key:
                     append_history(track, meta)
                     last_history_key = track.key
@@ -485,20 +545,146 @@ def run_presence() -> None:
             raise
         except Exception as exc:
             print(f"[loop] {exc}")
+            runtime.update(status="Error", last_error=str(exc))
 
-        time.sleep(POLL_SECONDS)
+        stop_event.wait(POLL_SECONDS)
+
+    try:
+        rpc.clear()
+        rpc.close()
+    except Exception:
+        pass
+    runtime.update(status="Stopped")
+
+
+def open_path(path: str) -> None:
+    if os.path.exists(path):
+        os.startfile(path)
+
+
+def run_tray() -> None:
+    if not acquire_single_instance():
+        return
+
+    try:
+        import pystray
+        from PIL import Image, ImageDraw
+        import tkinter as tk
+        from tkinter import ttk
+    except Exception as exc:
+        print(f"Tray dependencies are missing: {exc}")
+        run_presence()
+        return
+
+    stop_event = threading.Event()
+    worker = threading.Thread(target=run_presence, args=(stop_event, RUNTIME), daemon=True)
+    worker.start()
+
+    def load_icon_image():
+        if os.path.exists(ICON_PATH):
+            return Image.open(ICON_PATH).convert("RGBA")
+        image = Image.new("RGBA", (64, 64), (18, 18, 24, 255))
+        draw = ImageDraw.Draw(image)
+        draw.ellipse((10, 10, 54, 54), fill=(255, 210, 0, 255))
+        draw.ellipse((24, 24, 56, 56), fill=(88, 101, 242, 255))
+        draw.ellipse((44, 44, 58, 58), fill=(35, 209, 96, 255))
+        return image
+
+    def show_status():
+        snap = RUNTIME.snapshot()
+        root = tk.Tk()
+        root.title("MostDSYandex")
+        root.geometry("420x310")
+        root.resizable(False, False)
+        if os.path.exists(ICO_PATH):
+            root.iconbitmap(ICO_PATH)
+
+        bg = "#101114"
+        panel = "#191b20"
+        fg = "#f3f4f6"
+        muted = "#a7adb8"
+        accent = "#ffd21a"
+        root.configure(bg=bg)
+
+        style = ttk.Style(root)
+        style.theme_use("clam")
+        style.configure("TButton", padding=8, relief="flat")
+
+        frame = tk.Frame(root, bg=panel, padx=22, pady=20)
+        frame.pack(fill="both", expand=True, padx=14, pady=14)
+
+        tk.Label(frame, text="MostDSYandex", bg=panel, fg=fg, font=("Segoe UI", 18, "bold")).pack(anchor="w")
+        tk.Label(frame, text=snap["status"], bg=panel, fg=accent, font=("Segoe UI", 10, "bold")).pack(anchor="w", pady=(2, 14))
+        tk.Label(frame, text=snap["track"] or "No track yet", bg=panel, fg=fg, font=("Segoe UI", 11), wraplength=360, justify="left").pack(anchor="w")
+
+        details = [
+            ("Track", snap["track_url"]),
+            ("Artist", snap["artist_url"]),
+            ("Album", snap["album_url"]),
+        ]
+        for label, value in details:
+            text = f"{label}: {value or 'missing'}"
+            tk.Label(frame, text=text, bg=panel, fg=muted, font=("Segoe UI", 9), wraplength=360, justify="left").pack(anchor="w", pady=(8, 0))
+
+        if snap["last_error"]:
+            tk.Label(frame, text=snap["last_error"], bg=panel, fg="#ff8a8a", font=("Segoe UI", 9), wraplength=360, justify="left").pack(anchor="w", pady=(12, 0))
+
+        buttons = tk.Frame(frame, bg=panel)
+        buttons.pack(fill="x", pady=(18, 0))
+        ttk.Button(buttons, text="Open folder", command=lambda: open_path(APP_DIR)).pack(side="left")
+        ttk.Button(buttons, text="Close", command=root.destroy).pack(side="right")
+        root.mainloop()
+
+    def run_doctor_window():
+        result = subprocess.run(
+            [sys.executable, sys.argv[0], "--doctor"],
+            capture_output=True,
+            text=True,
+            cwd=APP_DIR,
+            timeout=60,
+        )
+        root = tk.Tk()
+        root.title("MostDSYandex doctor")
+        root.geometry("640x460")
+        if os.path.exists(ICO_PATH):
+            root.iconbitmap(ICO_PATH)
+        text = tk.Text(root, wrap="word", font=("Consolas", 10))
+        text.pack(fill="both", expand=True)
+        text.insert("1.0", (result.stdout or "") + (result.stderr or ""))
+        text.configure(state="disabled")
+        root.mainloop()
+
+    def quit_app(icon, _item=None):
+        stop_event.set()
+        icon.stop()
+
+    menu = pystray.Menu(
+        pystray.MenuItem("Status", lambda icon, item: threading.Thread(target=show_status, daemon=True).start(), default=True),
+        pystray.MenuItem("Doctor", lambda icon, item: threading.Thread(target=run_doctor_window, daemon=True).start()),
+        pystray.MenuItem("Open folder", lambda icon, item: open_path(APP_DIR)),
+        pystray.Menu.SEPARATOR,
+        pystray.MenuItem("Quit", quit_app),
+    )
+
+    icon = pystray.Icon("MostDSYandex", load_icon_image(), "MostDSYandex", menu)
+    icon.run()
+    stop_event.set()
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Yandex Music -> Discord Rich Presence bridge")
     parser.add_argument("--once", action="store_true", help="print detected track and cover, then exit")
     parser.add_argument("--doctor", action="store_true", help="run diagnostics and exit")
+    parser.add_argument("--tray", action="store_true", help="run as a tray utility")
+    parser.add_argument("--console", action="store_true", help="force console mode when running the exe")
     args = parser.parse_args()
 
     if args.doctor:
         doctor()
     elif args.once:
         asyncio.run(print_once())
+    elif args.tray or (getattr(sys, "frozen", False) and not args.console):
+        run_tray()
     else:
         try:
             run_presence()

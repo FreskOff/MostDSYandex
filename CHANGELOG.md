@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.0 - 2026-05-31
+
+- Adds a Windows tray app mode for the exe.
+- Starts release builds without a console window.
+- Adds a generated project icon/avatar.
+- Adds a small status window and doctor window from the tray menu.
+
 ## 0.1.1 - 2026-05-31
 
 - Adds field links for newer Discord clients.

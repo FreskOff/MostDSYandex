@@ -1,6 +1,6 @@
 [project]
 name = "mostdsyandex"
-version = "0.1.1"
+version = "0.2.0"
 description = "A small Windows bridge that shows Yandex Music tracks in Discord Rich Presence."
 readme = "README.md"
 requires-python = ">=3.12"
@@ -21,6 +21,7 @@ dependencies = [
     "pypresence==4.6.1",
     "winsdk==1.0.0b10",
     "yandex-music==3.0.0",
+    "pystray==0.19.5",
 ]
 
 [project.urls]

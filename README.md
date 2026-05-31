@@ -1,5 +1,7 @@
 # MostDSYandex
 
+<img src="assets/app-icon.png" width="96" alt="MostDSYandex icon">
+
 ![Python](https://img.shields.io/badge/Python-3.12+-3776AB?logo=python&logoColor=white)
 ![Windows](https://img.shields.io/badge/Windows-10%2F11-0078D4?logo=windows&logoColor=white)
 ![Discord](https://img.shields.io/badge/Discord-Rich%20Presence-5865F2?logo=discord&logoColor=white)
@@ -23,6 +25,7 @@ It is built for the desktop app, but browser playback can work too if Windows se
 - Writes a local `history.csv` if you want to see what played.
 - Starts with Windows if you install the Startup shortcut.
 - Has `--once` for a quick check and `--doctor` when something feels off.
+- The exe starts quietly in the Windows tray, without a console window.
 - Does not need a Yandex token.
 
 ## Preview
@@ -69,6 +72,10 @@ python presence.py
 
 If you do not care about the terminal, double-click `run.bat`.
 
+The release exe runs in tray mode by default. Right-click the tray icon for status, diagnostics, folder access, and quit.
+
+The tray UI is intentionally small: a status card, a doctor window, folder access, and quit. It stays out of the way unless you ask for it.
+
 ## Useful commands
 
 Check what the script sees, then quit:
@@ -93,6 +100,12 @@ Stop background copies:
 
 ```powershell
 .\stop.bat
+```
+
+Run the tray UI from source:
+
+```powershell
+python presence.py --tray
 ```
 
 ## Autostart
@@ -139,6 +152,7 @@ Copy `.env.example` to `.env` and tweak it there.
 
 ```text
 presence.py              main script
+assets/                  app icon and avatar
 run.bat                  start it by hand
 stop.bat                 stop running copies
 start_presence.ps1       hidden launcher used by autostart

@@ -8,12 +8,15 @@ $build = Join-Path $projectDir "build"
 python -m PyInstaller `
     --onefile `
     --clean `
-    --console `
+    --windowed `
     --name MostDSYandex `
+    --icon (Join-Path $projectDir "assets\app-icon.ico") `
+    --add-data "$projectDir\assets;assets" `
     --distpath $dist `
     --workpath $build `
     --collect-submodules winsdk `
     --collect-submodules yandex_music `
+    --collect-submodules pystray `
     $entry
 
 Write-Host "Built:"

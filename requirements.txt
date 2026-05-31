@@ -1,3 +1,4 @@
 pypresence==4.6.1
 winsdk==1.0.0b10
 yandex-music==3.0.0
+pystray==0.19.5
