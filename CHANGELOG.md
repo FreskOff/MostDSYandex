@@ -6,6 +6,7 @@
 - Reworks the status window so it is no longer a debug dump.
 - Clears the Discord card on pause by default.
 - Keeps `--doctor` as a command-line tool only.
+- Reduces local media polling from 15 seconds to 2 seconds.
 
 ## 0.2.0 - 2026-05-31
 

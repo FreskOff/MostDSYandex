@@ -48,7 +48,7 @@ load_env_file(os.path.join(APP_DIR, ".env"))
 
 
 CLIENT_ID = os.getenv("DISCORD_CLIENT_ID", "1504152588684230656")
-POLL_SECONDS = max(15, int(os.getenv("POLL_SECONDS", "15")))
+POLL_SECONDS = max(1, int(os.getenv("POLL_SECONDS", "2")))
 IMAGE_SIZE = "400x400"
 YANDEX_SOURCES = ("yandex", "music")
 

@@ -131,7 +131,7 @@ Copy `.env.example` to `.env` and tweak it there.
 | Variable | Default | What it changes |
 | --- | --- | --- |
 | `DISCORD_CLIENT_ID` | `1504152588684230656` | Discord app id. |
-| `POLL_SECONDS` | `15` | How often the script checks Windows media controls. Values below 15 are ignored. |
+| `POLL_SECONDS` | `2` | How often the app checks Windows media controls. Discord is still updated only when something changes. |
 | `LISTEN_BUTTON_LABEL` | `Listen` | Text on the track button. |
 | `ALBUM_BUTTON_LABEL` | `Album` | Text on the album button. |
 | `DISCORD_SMALL_TEXT` | `Playing from Yandex Music` | Hover text for the small image. |
@@ -146,7 +146,7 @@ Copy `.env.example` to `.env` and tweak it there.
 - Discord may hide Rich Presence buttons from you on your own card. Other people can still see them.
 - Clickable title/artist links depend on the current Discord client. Newer clients support them; older ones may only show the buttons.
 - The top line comes from the Discord application name. Rename the app in the Developer Portal if you want it to say `Yandex Music`.
-- Keep the poll interval at 15 seconds or higher. The script only sends a Discord update when the visible status changes.
+- The app checks local media often, but only sends a Discord update when the visible status changes.
 
 ## Files
 
