@@ -122,7 +122,8 @@ Remove it:
 powershell.exe -ExecutionPolicy Bypass -File .\scripts\uninstall_autostart.ps1
 ```
 
-The Startup script checks whether `presence.py` is already running before it starts a new copy.
+When the exe has been built, the shortcut points straight at `dist\MostDSYandex.exe`.
+That keeps Startup clean in Task Manager and lets the app wait quietly until Discord and Yandex Music are ready.
 
 ## Config
 

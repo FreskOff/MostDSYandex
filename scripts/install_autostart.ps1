@@ -3,13 +3,24 @@ $ErrorActionPreference = "Stop"
 $projectDir = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 $startup = [Environment]::GetFolderPath("Startup")
 $shortcutPath = Join-Path $startup "MostDSYandex Presence.lnk"
-$target = Join-Path $env:SystemRoot "System32\WindowsPowerShell\v1.0\powershell.exe"
-$script = Join-Path $projectDir "start_presence.ps1"
+$exePath = Join-Path $projectDir "dist\MostDSYandex.exe"
+$target = $exePath
+$arguments = ""
+
+if (-not (Test-Path $exePath)) {
+    $pythonw = Get-Command pythonw.exe -ErrorAction SilentlyContinue
+    if (-not $pythonw) {
+        $pythonw = Get-Command python.exe -ErrorAction Stop
+    }
+    $target = $pythonw.Source
+    $script = Join-Path $projectDir "presence.py"
+    $arguments = "`"$script`" --tray"
+}
 
 $shell = New-Object -ComObject WScript.Shell
 $shortcut = $shell.CreateShortcut($shortcutPath)
 $shortcut.TargetPath = $target
-$shortcut.Arguments = "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$script`""
+$shortcut.Arguments = $arguments
 $shortcut.WorkingDirectory = $projectDir
 $shortcut.WindowStyle = 7
 $shortcut.Description = "Start Yandex Music Discord Rich Presence bridge"

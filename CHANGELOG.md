@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.3 - 2026-06-05
+
+- Makes the tray app wait and reconnect when Discord is not ready during Windows startup.
+- Changes autostart to launch the exe directly instead of going through PowerShell.
+- Keeps the Python source fallback for people running without a built exe.
+
 ## 0.2.1 - 2026-05-31
 
 - Removes the Doctor item from the tray menu.

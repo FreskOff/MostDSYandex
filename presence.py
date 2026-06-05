@@ -474,19 +474,29 @@ def run_presence(stop_event: Optional[threading.Event] = None, runtime: Optional
     stop_event = stop_event or threading.Event()
     runtime = runtime or RUNTIME
     resolver = CoverResolver()
-    rpc = Presence(CLIENT_ID)
-    print("Connecting to Discord...")
-    runtime.update(status="Connecting to Discord")
-    rpc.connect()
-    print("Connected. Start Yandex Music playback and leave this window open.")
-    runtime.update(status="Running", last_error="")
-
+    rpc: Optional[Presence] = None
     last_signature = ""
     current_started_at: Optional[int] = None
     last_history_key = ""
 
     while not stop_event.is_set():
         try:
+            if rpc is None:
+                runtime.update(status="Waiting for Discord", last_error="")
+                try:
+                    rpc = Presence(CLIENT_ID)
+                    print("Connecting to Discord...")
+                    rpc.connect()
+                    print("Connected. Start Yandex Music playback and leave this window open.")
+                    runtime.update(status="Running", last_error="")
+                    last_signature = ""
+                except Exception as exc:
+                    rpc = None
+                    runtime.update(status="Waiting for Discord", last_error="")
+                    print(f"[discord] waiting: {exc}")
+                    stop_event.wait(POLL_SECONDS)
+                    continue
+
             track = asyncio.run(get_yandex_track())
             if not track:
                 if last_signature:
@@ -542,13 +552,21 @@ def run_presence(stop_event: Optional[threading.Event] = None, runtime: Optional
             raise
         except Exception as exc:
             print(f"[loop] {exc}")
-            runtime.update(status="Error", last_error=str(exc))
+            runtime.update(status="Reconnecting", last_error=str(exc))
+            try:
+                if rpc is not None:
+                    rpc.close()
+            except Exception:
+                pass
+            rpc = None
+            last_signature = ""
 
         stop_event.wait(POLL_SECONDS)
 
     try:
-        rpc.clear()
-        rpc.close()
+        if rpc is not None:
+            rpc.clear()
+            rpc.close()
     except Exception:
         pass
     runtime.update(status="Stopped")
